@@ -154,7 +154,7 @@ export default function DevDashboard({ onExit }) {
               <KpiCard label="Total Analyses" value={fmtNum(s.total)} sub="All time" color="primary" mono />
               <KpiCard label="Unique Users" value={fmtNum(s.uniqueEmails)} sub="By email" color="success" mono />
               <KpiCard label="Total Tokens" value={fmtNum(s.tokensIn + s.tokensOut)} sub={`${fmtNum(s.tokensCached)} cached`} color="warning" mono />
-              <KpiCard label="API Cost Est." value={fmtMoney(s.estimatedCostUSD)} sub="Gemini 2.0 Flash · Free tier" color="danger" mono />
+              <KpiCard label="API Cost Est." value={fmtMoney(s.estimatedCostUSD)} sub="Gemini 1.5 Flash · Free tier" color="danger" mono />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginBottom: 12 }}>
