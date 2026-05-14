@@ -43,11 +43,11 @@ export default function UserInputForm({ fileName, rowCount, onSubmit, onBack, de
 
   return (
     <div className="inputs-screen">
-      <div className="section-title">Quick setup</div>
+      <div className="section-title">One quick question</div>
       <div className="section-sub">
         {isSample
-          ? 'Demo mode — choose your profile to see the pre-built report.'
-          : 'Tell us about yourself so we can personalise your report.'}
+          ? 'Demo mode — pick a profile and we\'ll show you a pre-built report instantly.'
+          : 'This helps us frame the findings in a way that makes sense for your situation.'}
       </div>
 
       <div className="file-chip">
@@ -59,7 +59,7 @@ export default function UserInputForm({ fileName, rowCount, onSubmit, onBack, de
 
       <form onSubmit={handleSubmit}>
         <div className="input-card">
-          <label>I am analysing for <span className="req-star">*</span></label>
+          <label>I'm looking at this for <span className="req-star">*</span></label>
           <div className="toggle-group">
             <button type="button" className={`toggle-btn${profileType === 'merchant' ? ' active' : ''}`} onClick={() => setProfileType('merchant')}>
               <span className="toggle-icon">🏪</span>

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 
 const STEP_LABELS = [
-  'Parsing transaction data',
-  'Detecting anomaly patterns',
-  'Quantifying revenue impact',
-  'Generating action plans',
-  'Financial Report Ready',
+  'Reading your transaction history',
+  'Spotting where money is slipping out',
+  'Calculating how much you can recover',
+  'Building your action plan',
+  'Your report is ready',
 ]
 const REAL_DURATIONS   = [1500, 3000, 2500, 2000]
 const SAMPLE_DURATIONS = [700, 1600, 1500, 1200]
@@ -122,8 +122,8 @@ export default function LoadingState({ reportReady = false, isSample = false }) 
         </div>
       </div>
 
-      <h3>Scanning for leakage</h3>
-      <p>AI is analysing your transaction patterns…</p>
+      <h3>Finding your money leaks</h3>
+      <p>Scanning every transaction for patterns that cost you money…</p>
 
       <div className="loading-steps">
         {STEP_LABELS.map((label, i) => {

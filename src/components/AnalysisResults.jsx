@@ -30,11 +30,11 @@ function PatternCard({ pattern, rank, currency }) {
         </div>
         <div className="pattern-amounts">
           <div className="amount-block">
-            <div className="amt-label">Annual Loss</div>
+            <div className="amt-label">Losing per year</div>
             <div className="amt-value amt-loss">{fmt(pattern.estimated_annual_loss, currency)}</div>
           </div>
           <div className="amount-block">
-            <div className="amt-label">Recoverable</div>
+            <div className="amt-label">You can get back</div>
             <div className="amt-value amt-recovery">{fmt(pattern.estimated_recovery_amount, currency)}</div>
           </div>
         </div>
@@ -45,21 +45,21 @@ function PatternCard({ pattern, rank, currency }) {
 
         {pattern.evidence && (
           <div className="evidence-block">
-            <strong>Evidence</strong>
+            <strong>What we found in your data</strong>
             {pattern.evidence}
           </div>
         )}
 
         {pattern.actionable_fix && (
           <div className="fix-block">
-            <h5>Fix</h5>
+            <h5>How to fix it</h5>
             <div className="fix-text">{pattern.actionable_fix}</div>
           </div>
         )}
 
         {pattern.implementation_steps?.length > 0 && (
           <div className="steps-block">
-            <h5>Steps</h5>
+            <h5>Step-by-step</h5>
             <div className="steps-list">
               {pattern.implementation_steps.map((step, i) => (
                 <div className="step-item" key={i}>
@@ -73,7 +73,7 @@ function PatternCard({ pattern, rank, currency }) {
 
         {(pattern.timeline || pattern.effort) && (
           <div className="timeline-row">
-            {pattern.timeline && <span>Timeline: <strong>{pattern.timeline}</strong></span>}
+            {pattern.timeline && <span>Time to fix: <strong>{pattern.timeline}</strong></span>}
             {pattern.effort && <span>Effort: <strong>{pattern.effort}</strong></span>}
           </div>
         )}
@@ -110,8 +110,8 @@ export default function AnalysisResults({ analysis, fileName, userProfile, usage
     <div>
       <div className="results-header">
         <div className="results-title">
-          <h2>Revenue Leakage Report</h2>
-          <p>{fileName} · {analysis?.transactions_analysed?.toLocaleString() ?? '—'} transactions · {userProfile?.country}</p>
+          <h2>Here's where your money is going</h2>
+          <p>{fileName} · {analysis?.transactions_analysed?.toLocaleString() ?? '—'} transactions analysed · {userProfile?.country}</p>
         </div>
         <div className="results-actions">
           <button className="btn-secondary" onClick={handleEmail}>📧 Email</button>
@@ -122,24 +122,24 @@ export default function AnalysisResults({ analysis, fileName, userProfile, usage
 
       <div className="summary-strip">
         <div className="summary-card danger">
-          <div className="label">Total Annual Leakage</div>
+          <div className="label">You're losing this every year</div>
           <div className="value">{fmt(totalLoss, currency)}</div>
-          <div className="sub">Across {patterns.length} patterns</div>
+          <div className="sub">Across {patterns.length} issues found</div>
         </div>
         <div className="summary-card success">
-          <div className="label">Recovery Potential</div>
+          <div className="label">You could get this back</div>
           <div className="value">{fmt(totalRecovery, currency)}</div>
-          <div className="sub">With recommended fixes</div>
+          <div className="sub">With the fixes below</div>
         </div>
         <div className="summary-card primary">
-          <div className="label">Confidence</div>
+          <div className="label">How sure we are</div>
           <div className="value">{analysis?.confidence_score ?? '—'}%</div>
-          <div className="sub">Based on data quality</div>
+          <div className="sub">Based on your data quality</div>
         </div>
       </div>
 
       <div className="patterns-section">
-        <h3>Top Leakage Patterns</h3>
+        <h3>Where your money is leaking</h3>
         {patterns.map((p, i) => (
           <PatternCard key={i} pattern={p} rank={i + 1} currency={currency} />
         ))}
@@ -147,7 +147,7 @@ export default function AnalysisResults({ analysis, fileName, userProfile, usage
 
       {analysis?.quick_wins?.length > 0 && (
         <div className="quick-wins">
-          <h3>⚡ Quick Wins — This Week</h3>
+          <h3>⚡ Do these this week — fast, free, high impact</h3>
           <div className="wins-grid">
             {analysis.quick_wins.map((w, i) => (
               <div className="win-item" key={i}>

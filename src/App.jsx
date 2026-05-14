@@ -257,7 +257,7 @@ export default function App() {
                 Stop losing <span className="mono">money</span> <span className="accent">silently.</span>
               </h2>
               <p className="hero-sub">
-                Upload your bank statement or POS data. Our AI identifies your top revenue leakage patterns with precise recovery estimates.
+                Upload your bank statement. Our AI scans every transaction and shows you exactly where money is slipping away — and how to get it back.
               </p>
             </div>
 
@@ -267,10 +267,10 @@ export default function App() {
 
             <div className="hero-features">
               {[
-                ['🔍', 'Failed transaction patterns'],
-                ['💸', 'Fee optimisation gaps'],
-                ['⏱️', 'Settlement delay leakage'],
-                ['📊', 'Exact recovery potential'],
+                ['🔍', 'Recover failed transaction losses'],
+                ['💸', 'Cut unnecessary fee spend'],
+                ['⏱️', 'Fix settlement timing losses'],
+                ['📊', 'Know exactly what you can recover'],
               ].map(([icon, text]) => (
                 <div className="feature-pill" key={text}>
                   <span className="feature-pill-icon">{icon}</span>
