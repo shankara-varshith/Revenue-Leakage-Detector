@@ -82,7 +82,7 @@ ${csvRows}`
   try {
     const stream = client.messages.stream({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1500,
+      max_tokens: 2500,
       system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: userMessage }],
     })
@@ -96,12 +96,29 @@ ${csvRows}`
     const raw = finalMsg.content[0]?.text ?? ''
 
     let analysis
-    try { analysis = JSON.parse(raw) }
-    catch {
-      const match = raw.match(/\{[\s\S]*\}/)
-      if (!match) throw new Error('AI returned invalid JSON')
-      analysis = JSON.parse(match[0])
+    const tryParse = (str) => {
+      try { return JSON.parse(str) } catch { return null }
     }
+    analysis = tryParse(raw)
+    if (!analysis) {
+      // Extract outermost JSON object
+      const match = raw.match(/\{[\s\S]*\}/)
+      if (match) analysis = tryParse(match[0])
+    }
+    if (!analysis) {
+      // Last resort: truncated JSON — close any open arrays/objects and retry
+      const match = raw.match(/\{[\s\S]*/)
+      if (match) {
+        let s = match[0]
+        // Count unclosed brackets and close them
+        let opens = (s.match(/\[/g) || []).length - (s.match(/\]/g) || []).length
+        let openBraces = (s.match(/\{/g) || []).length - (s.match(/\}/g) || []).length
+        s = s.replace(/,\s*$/, '') // strip trailing comma
+        s += ']'.repeat(Math.max(0, opens)) + '}'.repeat(Math.max(0, openBraces))
+        analysis = tryParse(s)
+      }
+    }
+    if (!analysis) throw new Error('AI returned invalid JSON — please try again')
 
     // Persist to MongoDB
     let sessionId = null
