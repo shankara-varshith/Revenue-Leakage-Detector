@@ -87,7 +87,7 @@ export default function App() {
   const [analysis, setAnalysis]       = useState(null)
   const [error, setError]             = useState(null)
   const [usage, setUsage]             = useState(null)
-  const [isDev, setIsDev]             = useState(false)
+  const [isDev, setIsDev]             = useState(() => window.location.hash === '#dev')
   const [devAuthd, setDevAuthd]       = useState(false)
   const [reportReady, setReportReady] = useState(false)
   const [isSample, setIsSample]       = useState(false)
@@ -98,7 +98,6 @@ export default function App() {
       setIsDev(next)
       if (!next) setDevAuthd(false)
     }
-    check()
     window.addEventListener('hashchange', check)
     return () => window.removeEventListener('hashchange', check)
   }, [])
