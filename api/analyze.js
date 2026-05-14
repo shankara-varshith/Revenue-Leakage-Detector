@@ -162,7 +162,11 @@ ${csvRows}`
     res.end()
   } catch (err) {
     console.error('Analysis error:', err)
-    sendEvent(res, { type: 'error', error: err.message || 'Analysis failed' })
+    let message = err.message || 'Analysis failed'
+    if (message.includes('429') || message.includes('quota') || message.includes('Too Many Requests')) {
+      message = 'Too many requests — free tier limit reached. Please try again in a minute.'
+    }
+    sendEvent(res, { type: 'error', error: message })
     res.end()
   }
 }
