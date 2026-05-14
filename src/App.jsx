@@ -5,6 +5,12 @@ import AnalysisResults from './components/AnalysisResults'
 import UserInputForm from './components/UserInputForm'
 import BentoPreview from './components/BentoPreview'
 import DevDashboard from './components/DevDashboard'
+import {
+  SAMPLE_TRANSACTIONS,
+  SAMPLE_FILE_NAME,
+  SAMPLE_REPORT_MERCHANT,
+  SAMPLE_REPORT_INDIVIDUAL,
+} from './utils/sampleData'
 import './App.css'
 
 function attachCursorGlow() {
@@ -21,18 +27,77 @@ function attachCursorGlow() {
   }, 200)
 }
 
+// Dev dashboard login — shown before DevDashboard when not yet authenticated
+function DevLogin({ onLogin, onCancel }) {
+  const [email, setEmail] = useState('')
+  const [pass, setPass]   = useState('')
+  const [err, setErr]     = useState('')
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    if (email === 'shankaravarshith@gmail.com' && pass === '1436') {
+      onLogin()
+    } else {
+      setErr('Invalid credentials')
+    }
+  }
+
+  return (
+    <div className="dev-login-wrap">
+      <div className="dev-login-card">
+        <div className="dev-login-icon">🔒</div>
+        <h2 className="dev-login-title">Developer Dashboard</h2>
+        <p className="dev-login-sub">Restricted access — sign in to continue</p>
+        <form onSubmit={handleSubmit}>
+          <input
+            className="text-input dev-login-input"
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => { setEmail(e.target.value); setErr('') }}
+            autoFocus
+          />
+          <input
+            className="text-input dev-login-input"
+            type="password"
+            placeholder="Password"
+            value={pass}
+            onChange={e => { setPass(e.target.value); setErr('') }}
+          />
+          {err && <p className="dev-login-err">{err}</p>}
+          <button className="btn-primary btn-large" type="submit">Sign In</button>
+        </form>
+        <button
+          type="button"
+          className="btn-secondary"
+          style={{ marginTop: 12, width: '100%', justifyContent: 'center' }}
+          onClick={onCancel}
+        >
+          ← Back to App
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
-  const [step, setStep] = useState('upload')
-  const [fileData, setFileData] = useState(null)
+  const [step, setStep]               = useState('upload')
+  const [fileData, setFileData]       = useState(null)
   const [userProfile, setUserProfile] = useState(null)
-  const [analysis, setAnalysis] = useState(null)
-  const [error, setError] = useState(null)
-  const [usage, setUsage] = useState(null)
-  const [isDev, setIsDev] = useState(false)
+  const [analysis, setAnalysis]       = useState(null)
+  const [error, setError]             = useState(null)
+  const [usage, setUsage]             = useState(null)
+  const [isDev, setIsDev]             = useState(false)
+  const [devAuthd, setDevAuthd]       = useState(false)
   const [reportReady, setReportReady] = useState(false)
+  const [isSample, setIsSample]       = useState(false)
 
   useEffect(() => {
-    const check = () => setIsDev(window.location.hash === '#dev')
+    const check = () => {
+      const next = window.location.hash === '#dev'
+      setIsDev(next)
+      if (!next) setDevAuthd(false)
+    }
     check()
     window.addEventListener('hashchange', check)
     return () => window.removeEventListener('hashchange', check)
@@ -40,6 +105,13 @@ export default function App() {
 
   function handleFileLoaded(data, name) {
     setFileData({ transactions: data, fileName: name })
+    setIsSample(false)
+    setStep('inputs')
+  }
+
+  function handleTestSample() {
+    setFileData({ transactions: SAMPLE_TRANSACTIONS, fileName: SAMPLE_FILE_NAME })
+    setIsSample(true)
     setStep('inputs')
   }
 
@@ -47,6 +119,26 @@ export default function App() {
     setUserProfile(profile)
     setStep('loading')
     setError(null)
+
+    // Sample mode: animated buffer, no API call
+    if (isSample) {
+      const reportData = profile.type === 'individual'
+        ? SAMPLE_REPORT_INDIVIDUAL
+        : SAMPLE_REPORT_MERCHANT
+      // Fire reportReady 200ms after the sample step animation completes (5000ms total)
+      setTimeout(() => {
+        setAnalysis(reportData)
+        setUsage(null)
+        setReportReady(true)
+        setTimeout(() => {
+          setStep('results')
+          setReportReady(false)
+          attachCursorGlow()
+        }, 900)
+      }, 5200)
+      return
+    }
+
     try {
       const res = await fetch('/api/analyze', {
         method: 'POST',
@@ -62,8 +154,7 @@ export default function App() {
         throw new Error(err.error || `Server error ${res.status}`)
       }
 
-      // Read SSE stream — navigates to results the moment 'done' event arrives
-      const reader = res.body.getReader()
+      const reader  = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
 
@@ -80,7 +171,6 @@ export default function App() {
             setAnalysis(evt.analysis)
             setUsage(evt.usage)
             setReportReady(true)
-            // Brief pause so the user sees all 5 green ticks + 100% before navigating
             setTimeout(() => {
               setStep('results')
               setReportReady(false)
@@ -105,17 +195,36 @@ export default function App() {
     setError(null)
     setUsage(null)
     setReportReady(false)
+    setIsSample(false)
   }
 
   if (isDev) {
-    return <DevDashboard onExit={() => { window.location.hash = ''; setIsDev(false) }} />
+    if (!devAuthd) {
+      return (
+        <DevLogin
+          onLogin={() => setDevAuthd(true)}
+          onCancel={() => { window.location.hash = ''; setIsDev(false) }}
+        />
+      )
+    }
+    return (
+      <DevDashboard
+        onExit={() => { window.location.hash = ''; setIsDev(false); setDevAuthd(false) }}
+      />
+    )
   }
+
+  const isResultsStep = step === 'results'
 
   return (
     <div className="app">
       <header className="header">
         <div className="header-content">
-          <div className="logo">
+          <div
+            className={`logo${isResultsStep ? ' logo-clickable' : ''}`}
+            onClick={isResultsStep ? handleReset : undefined}
+            title={isResultsStep ? 'Back to Home' : undefined}
+          >
             <div className="logo-icon">💰</div>
             <div>
               <h1>Revenue Leakage Detector</h1>
@@ -154,7 +263,7 @@ export default function App() {
             </div>
 
             <div className="hero-upload-centrepiece">
-              <FileUpload onFileLoaded={handleFileLoaded} />
+              <FileUpload onFileLoaded={handleFileLoaded} onTestSample={handleTestSample} />
             </div>
 
             <div className="hero-features">
@@ -184,10 +293,12 @@ export default function App() {
             rowCount={fileData?.transactions?.length}
             onSubmit={handleAnalyze}
             onBack={handleReset}
+            defaultCurrency="USD"
+            isSample={isSample}
           />
         )}
 
-        {step === 'loading' && <LoadingState reportReady={reportReady} />}
+        {step === 'loading' && <LoadingState reportReady={reportReady} isSample={isSample} />}
 
         {step === 'error' && (
           <div className="error-state">

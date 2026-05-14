@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 
-const STEPS = [
-  { label: 'Parsing transaction data', duration: 1500 },
-  { label: 'Detecting anomaly patterns', duration: 3000 },
-  { label: 'Quantifying revenue impact', duration: 2500 },
-  { label: 'Generating action plans', duration: 2000 },
-  { label: 'Financial Report Ready', duration: null }, // driven by reportReady prop
+const STEP_LABELS = [
+  'Parsing transaction data',
+  'Detecting anomaly patterns',
+  'Quantifying revenue impact',
+  'Generating action plans',
+  'Financial Report Ready',
 ]
-
-const TIMED_STEPS = STEPS.filter(s => s.duration !== null)
-const TOTAL_MS = TIMED_STEPS.reduce((s, st) => s + st.duration, 0)
+const REAL_DURATIONS   = [1500, 3000, 2500, 2000]
+const SAMPLE_DURATIONS = [700, 1600, 1500, 1200]
 
 const TIPS = [
   'Avoid buying luxury items if you cannot show them off or tell anyone about them.',
@@ -33,7 +32,10 @@ function shuffle(arr) {
   return a
 }
 
-export default function LoadingState({ reportReady = false }) {
+export default function LoadingState({ reportReady = false, isSample = false }) {
+  const durations = isSample ? SAMPLE_DURATIONS : REAL_DURATIONS
+  const totalMs   = durations.reduce((s, d) => s + d, 0)
+
   const [activeStep, setActiveStep] = useState(0)
   const [pct, setPct] = useState(0)
   const [tipIdx, setTipIdx] = useState(0)
@@ -43,23 +45,24 @@ export default function LoadingState({ reportReady = false }) {
   // Advance the first 4 timed steps
   useEffect(() => {
     let elapsed = 0
-    const timers = TIMED_STEPS.map((step, i) => {
-      const t = setTimeout(() => setActiveStep(i + 1), elapsed + step.duration)
-      elapsed += step.duration
+    const timers = durations.map((dur, i) => {
+      const t = setTimeout(() => setActiveStep(i + 1), elapsed + dur)
+      elapsed += dur
       return t
     })
     return () => timers.forEach(clearTimeout)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // When report is ready, mark all steps done (including step 5) and fill ring to 100%
   useEffect(() => {
     if (reportReady) {
-      setActiveStep(STEPS.length) // all green
+      setActiveStep(STEP_LABELS.length) // all green
       setPct(100)
     }
   }, [reportReady])
 
-  // Progress ring: fill to 96% over TOTAL_MS, then crawl slowly toward 99% — never reverses
+  // Progress ring: fill to 96% over totalMs, then crawl slowly toward 99% — never reverses
   useEffect(() => {
     if (reportReady) return
     const start = Date.now()
@@ -68,8 +71,8 @@ export default function LoadingState({ reportReady = false }) {
     const frame = () => {
       const elapsed = Date.now() - start
       let p
-      if (elapsed < TOTAL_MS) {
-        p = (elapsed / TOTAL_MS) * 96
+      if (elapsed < totalMs) {
+        p = (elapsed / totalMs) * 96
       } else {
         // Asymptotic crawl: approaches 99% but never reaches it
         const extra = (elapsed - TOTAL_MS) / 1000
@@ -123,15 +126,15 @@ export default function LoadingState({ reportReady = false }) {
       <p>AI is analysing your transaction patterns…</p>
 
       <div className="loading-steps">
-        {STEPS.map((step, i) => {
+        {STEP_LABELS.map((label, i) => {
           const isDone   = i < activeStep
-          const isActive = i === activeStep && i < STEPS.length - 1
+          const isActive = i === activeStep && i < STEP_LABELS.length - 1
           return (
             <div className={`loading-step${isActive ? ' active' : ''}${isDone ? ' done-step' : ''}`} key={i}>
               <div className={`step-icon${isDone ? ' done' : isActive ? ' active' : ''}`}>
                 {isDone ? '✓' : i + 1}
               </div>
-              <span>{step.label}</span>
+              <span>{label}</span>
             </div>
           )
         })}

@@ -20,9 +20,11 @@ const COUNTRIES = [
   { name: 'Other', currency: '$', code: 'USD' },
 ]
 
-export default function UserInputForm({ fileName, rowCount, onSubmit, onBack }) {
+export default function UserInputForm({ fileName, rowCount, onSubmit, onBack, defaultCurrency, isSample }) {
   const [profileType, setProfileType] = useState('merchant')
-  const [country, setCountry] = useState('India')
+  // Default to United States when defaultCurrency is USD (sample mode)
+  const defaultCountry = defaultCurrency === 'USD' ? 'United States' : 'India'
+  const [country, setCountry] = useState(defaultCountry)
   const [email, setEmail] = useState('')
 
   function handleSubmit(e) {
@@ -37,22 +39,27 @@ export default function UserInputForm({ fileName, rowCount, onSubmit, onBack }) 
     })
   }
 
-  const isValid = country && email && email.includes('@')
+  const isValid = !!country
 
   return (
     <div className="inputs-screen">
       <div className="section-title">Quick setup</div>
-      <div className="section-sub">Tell us about yourself so we can personalise your report.</div>
+      <div className="section-sub">
+        {isSample
+          ? 'Demo mode — choose your profile to see the pre-built report.'
+          : 'Tell us about yourself so we can personalise your report.'}
+      </div>
 
       <div className="file-chip">
         <span>📄</span>
         <span className="file-chip-name">{fileName}</span>
         <span style={{ color: 'var(--text-3)', fontSize: 12 }}>{rowCount?.toLocaleString()} rows</span>
+        {isSample && <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, color: 'var(--primary-bright)', background: 'var(--primary-light)', padding: '2px 8px', borderRadius: 10 }}>DEMO</span>}
       </div>
 
       <form onSubmit={handleSubmit}>
         <div className="input-card">
-          <label>I am analysing for</label>
+          <label>I am analysing for <span className="req-star">*</span></label>
           <div className="toggle-group">
             <button type="button" className={`toggle-btn${profileType === 'merchant' ? ' active' : ''}`} onClick={() => setProfileType('merchant')}>
               <span className="toggle-icon">🏪</span>
@@ -66,7 +73,7 @@ export default function UserInputForm({ fileName, rowCount, onSubmit, onBack }) 
         </div>
 
         <div className="input-card">
-          <label>Business location</label>
+          <label>Business location <span className="req-star">*</span></label>
           <select className="select-input" value={country} onChange={e => setCountry(e.target.value)}>
             {COUNTRIES.map(c => (
               <option key={c.code} value={c.name}>{c.name} ({c.currency} {c.code})</option>
@@ -75,19 +82,18 @@ export default function UserInputForm({ fileName, rowCount, onSubmit, onBack }) 
         </div>
 
         <div className="input-card">
-          <label>Email — report will be sent here</label>
+          <label>Email <span style={{ color: 'var(--text-3)', fontWeight: 500, textTransform: 'none', fontSize: 10 }}>(optional)</span></label>
           <input
             type="email"
             className="text-input"
             placeholder="you@example.com"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            required
           />
         </div>
 
         <button type="submit" className="btn-primary btn-large" disabled={!isValid}>
-          🔍 Analyse My Transactions
+          {isSample ? '🎯 View Sample Report' : '🔍 Analyse My Transactions'}
         </button>
         <div style={{ textAlign: 'center', marginTop: 12 }}>
           <button type="button" className="btn-secondary" onClick={onBack} style={{ fontSize: 12 }}>

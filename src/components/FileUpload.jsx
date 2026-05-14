@@ -12,7 +12,7 @@ function useCursorGlow() {
   return { onMouseMove: handleMouseMove }
 }
 
-export default function FileUpload({ onFileLoaded }) {
+export default function FileUpload({ onFileLoaded, onTestSample }) {
   const inputRef = useRef(null)
   const cardRef = useRef(null)
   const [dragOver, setDragOver] = useState(false)
@@ -90,7 +90,18 @@ export default function FileUpload({ onFileLoaded }) {
         <h3>{parsing ? 'Parsing your file…' : 'Drop your statement here'}</h3>
         <p>{parsing ? 'Please wait' : 'Drag & drop or click to browse'}</p>
 
-        {!parsing && <button className="upload-btn" type="button">Choose File</button>}
+        {!parsing && (
+          <div className="upload-btn-row">
+            <button className="upload-btn" type="button">Choose File</button>
+            <button
+              className="upload-btn-sample"
+              type="button"
+              onClick={e => { e.stopPropagation(); onTestSample?.() }}
+            >
+              Try Sample
+            </button>
+          </div>
+        )}
 
         <div className="supported-formats">
           <span className="format-badge">CSV</span>
