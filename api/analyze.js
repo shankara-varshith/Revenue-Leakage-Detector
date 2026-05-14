@@ -1,16 +1,32 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { getBankStatements, getOutputReports } from './mongo.js'
 
-const SYSTEM_PROMPT = `You are an expert financial analyst detecting revenue leakage from transaction data. Identify the top 3 most impactful leakage patterns with precise, actionable fixes.
+const SYSTEM_PROMPT = `You are a senior financial analyst specialising in revenue leakage detection. Your job is to identify the 3 BIGGEST money problems in the transaction data — the ones that actually matter, not minor nuisances.
 
-Look for: failed/declined transactions, excessive fees, settlement delays, chargebacks, pricing inconsistencies, duplicate transactions, authorization issues.
+WHAT COUNTS AS A MAJOR LEAKAGE:
+- A pattern costing at least 1–2% of total transaction volume annually, OR
+- A recurring structural problem (repeated failed transactions, systematic overcharging, avoidable fee categories), OR
+- Something fixable with a concrete operational change that recovers real money
 
-Rules:
-- All money values MUST use the currency symbol and code provided by the user. Never mix currencies.
-- For merchants: focus on business cash flow, fees, settlement, chargebacks.
-- For individuals: focus on subscriptions, impulse spending, hidden fees, savings gaps.
-- Keep descriptions under 2 sentences. Evidence must cite specific data points.
-- Be direct and specific — no generic advice.
+IGNORE AND DO NOT REPORT:
+- One-off anomalies with no clear pattern
+- Trivial rounding differences or single small transactions
+- Generic advice that applies to every business ("negotiate better rates") without data backing
+- Anything below ~0.5% of total transaction volume unless it compounds severely
+
+HOW TO ESTIMATE LOSSES ACCURATELY:
+1. Count the affected transactions in the data sample
+2. Extrapolate to annual volume (data may cover weeks or months — infer the period from date range)
+3. Apply the loss per transaction to get annual figure
+4. Recovery amount = realistic portion you can actually reclaim (be conservative, not optimistic)
+
+ANALYSIS RULES:
+- All money values MUST use the currency symbol and code the user provides. Never mix currencies.
+- For merchants: focus on failed/declined transactions, payment processor fees, settlement delays, chargebacks, duplicate charges.
+- For individuals: focus on recurring subscription bleed, high-fee payment methods, avoidable bank charges, missed cashback/rewards.
+- Evidence must quote SPECIFIC numbers from the data — transaction counts, exact amounts, dates, merchant names.
+- Descriptions: 2 sentences max. Be blunt about the problem. No filler language.
+- Fixes must be concrete operational steps, not platitudes.
 
 Respond ONLY with valid JSON matching this exact schema:
 {
@@ -18,21 +34,21 @@ Respond ONLY with valid JSON matching this exact schema:
   "confidence_score": <0-100>,
   "leakage_patterns": [
     {
-      "pattern_name": "<short name>",
-      "category": "<Failed Transactions|Fee Optimisation|Settlement|Chargebacks|Pricing|Subscriptions|Other>",
+      "pattern_name": "<short, punchy name — what the problem IS>",
+      "category": "<Failed Transactions|Excessive Fees|Settlement Delays|Chargebacks|Duplicate Charges|Subscriptions|Other>",
       "severity": "<Critical|High|Medium>",
       "priority": "<Immediate|Short-term|Long-term>",
-      "description": "<max 2 sentences>",
-      "evidence": "<specific data points from their data>",
-      "estimated_annual_loss": <number>,
-      "estimated_recovery_amount": <number>,
-      "actionable_fix": "<specific concrete action>",
+      "description": "<2 sentences max — name the problem and why it costs money>",
+      "evidence": "<specific: transaction count, total amount, date range, merchant names — from their actual data>",
+      "estimated_annual_loss": <number — extrapolated to full year>,
+      "estimated_recovery_amount": <number — conservative, realistic>,
+      "actionable_fix": "<one concrete action — what exactly to do, with whom, to fix this>",
       "implementation_steps": ["step 1", "step 2", "step 3"],
-      "timeline": "<e.g. 1-2 weeks>",
+      "timeline": "<realistic timeframe e.g. '3–5 days' or '2–4 weeks'>",
       "effort": "<Low|Medium|High>"
     }
   ],
-  "quick_wins": ["<one-line action>", "<one-line action>", "<one-line action>"]
+  "quick_wins": ["<specific one-liner with a number: e.g. 'Cancel 3 duplicate SaaS subscriptions — saves $X/month'>", "<action>", "<action>"]
 }`
 
 function sendEvent(res, data) {
@@ -54,11 +70,11 @@ export default async function handler(req, res) {
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash-lite',
+    model: 'gemini-2.5-pro',
     systemInstruction: SYSTEM_PROMPT,
   })
 
-  const sample = transactionData.slice(0, 100)
+  const sample = transactionData.slice(0, 500)
   const columns = Object.keys(sample[0] || {})
   const currency     = userProfile?.currency     ?? '$'
   const currencyCode = userProfile?.currencyCode ?? 'USD'
@@ -72,13 +88,19 @@ export default async function handler(req, res) {
     }).join(','))
   ].join('\n')
 
-  const userMessage = `Analyse this transaction dataset for revenue leakage.
+  const userMessage = `Analyse this transaction dataset for the 3 BIGGEST revenue leakage patterns.
 
 Profile: ${profileLabel}
 Location: ${userProfile?.country ?? 'Unknown'}
 Currency: ${currency} (${currencyCode}) — use ONLY this currency for all money values
 File: ${fileName}
-Total rows: ${transactionData.length} (sample: ${sample.length})
+Total rows in file: ${transactionData.length} (sending first ${sample.length} rows)
+
+Instructions:
+- Infer the time period covered from the date column(s) in the data
+- Extrapolate all loss/recovery figures to annual (12-month) amounts
+- Only report patterns with material financial impact — skip minor anomalies
+- Every evidence field must quote specific numbers, dates, and transaction descriptions from this data
 
 Data (CSV):
 ${csvRows}`
