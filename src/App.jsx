@@ -60,11 +60,31 @@ export default function App() {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || `Server error ${res.status}`)
       }
-      const json = await res.json()
-      setAnalysis(json.analysis)
-      setUsage(json.usage)
-      setStep('results')
-      attachCursorGlow()
+
+      // Read SSE stream — navigates to results the moment 'done' event arrives
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop()
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const evt = JSON.parse(line.slice(6))
+          if (evt.type === 'done') {
+            setAnalysis(evt.analysis)
+            setUsage(evt.usage)
+            setStep('results')
+            attachCursorGlow()
+            return
+          }
+          if (evt.type === 'error') throw new Error(evt.error)
+        }
+      }
     } catch (e) {
       setError(e.message)
       setStep('error')

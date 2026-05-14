@@ -35,14 +35,25 @@ Respond ONLY with valid JSON matching this exact schema:
   "quick_wins": ["<one-line action>", "<one-line action>", "<one-line action>"]
 }`
 
+function sendEvent(res, data) {
+  res.write(`data: ${JSON.stringify(data)}\n\n`)
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { transactionData, fileName, userProfile } = req.body
   if (!transactionData?.length) return res.status(400).json({ error: 'No transaction data provided' })
 
+  // SSE headers — keeps Vercel connection alive during long Claude generation
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.flushHeaders()
+
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  const sample = transactionData.slice(0, 500)
+  const sample = transactionData.slice(0, 300)
   const columns = Object.keys(sample[0] || {})
   const currency     = userProfile?.currency     ?? '$'
   const currencyCode = userProfile?.currencyCode ?? 'USD'
@@ -61,14 +72,21 @@ Data (${sample.length} rows):
 ${JSON.stringify(sample, null, 2)}`
 
   try {
-    const response = await client.messages.create({
+    const stream = client.messages.stream({
       model: 'claude-sonnet-4-6',
       max_tokens: 3000,
       system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: userMessage }],
     })
 
-    const raw = response.content[0]?.text ?? ''
+    // Forward each text chunk to keep connection alive
+    stream.on('text', (text) => {
+      sendEvent(res, { type: 'chunk', text })
+    })
+
+    const finalMsg = await stream.finalMessage()
+    const raw = finalMsg.content[0]?.text ?? ''
+
     let analysis
     try { analysis = JSON.parse(raw) }
     catch {
@@ -81,29 +99,28 @@ ${JSON.stringify(sample, null, 2)}`
     let sessionId = null
     try {
       const col = await getSessions()
-      const patterns      = analysis.leakage_patterns?.map(p => p.pattern_name) ?? []
-      const totalLeakage  = analysis.leakage_patterns?.reduce((s, p) => s + (Number(p.estimated_annual_loss)      || 0), 0) ?? 0
-      const recoveryPot   = analysis.leakage_patterns?.reduce((s, p) => s + (Number(p.estimated_recovery_amount) || 0), 0) ?? 0
+      const patterns     = analysis.leakage_patterns?.map(p => p.pattern_name) ?? []
+      const totalLeakage = analysis.leakage_patterns?.reduce((s, p) => s + (Number(p.estimated_annual_loss)      || 0), 0) ?? 0
+      const recoveryPot  = analysis.leakage_patterns?.reduce((s, p) => s + (Number(p.estimated_recovery_amount) || 0), 0) ?? 0
 
       const doc = {
         timestamp:         new Date(),
-        email:             userProfile?.email       ?? 'unknown',
-        profileType:       userProfile?.type        ?? 'unknown',
-        country:           userProfile?.country     ?? 'unknown',
+        email:             userProfile?.email    ?? 'unknown',
+        profileType:       userProfile?.type     ?? 'unknown',
+        country:           userProfile?.country  ?? 'unknown',
         currency,
         currencyCode,
         fileName,
         rowCount:          transactionData.length,
         columns,
-        tokensIn:          response.usage?.input_tokens              ?? 0,
-        tokensOut:         response.usage?.output_tokens             ?? 0,
-        tokensCached:      response.usage?.cache_read_input_tokens   ?? 0,
+        tokensIn:          finalMsg.usage?.input_tokens            ?? 0,
+        tokensOut:         finalMsg.usage?.output_tokens           ?? 0,
+        tokensCached:      finalMsg.usage?.cache_read_input_tokens ?? 0,
         totalLeakage,
         recoveryPotential: recoveryPot,
         confidence:        analysis.confidence_score ?? 0,
         patterns,
         quickWins:         analysis.quick_wins ?? [],
-        // Full payloads — accessible via /api/sessions/:id/statement|report
         statementData:     transactionData,
         reportData:        analysis,
       }
@@ -114,9 +131,11 @@ ${JSON.stringify(sample, null, 2)}`
       console.warn('MongoDB log failed:', dbErr.message)
     }
 
-    return res.status(200).json({ analysis, usage: response.usage, sessionId })
+    sendEvent(res, { type: 'done', analysis, usage: finalMsg.usage, sessionId })
+    res.end()
   } catch (err) {
     console.error('Analysis error:', err)
-    return res.status(500).json({ error: err.message || 'Analysis failed' })
+    sendEvent(res, { type: 'error', error: err.message || 'Analysis failed' })
+    res.end()
   }
 }
