@@ -23,6 +23,10 @@ export default function FileUpload({ onFileLoaded }) {
 
   async function handleFile(file) {
     if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      setParseError(`File is ${(file.size / (1024 * 1024)).toFixed(1)} MB — maximum allowed size is 2 MB. Please reduce the file or split it into smaller batches.`)
+      return
+    }
     setParsing(true)
     setParseError(null)
     try {
@@ -93,6 +97,7 @@ export default function FileUpload({ onFileLoaded }) {
           <span className="format-badge">XLSX</span>
           <span className="format-badge">XLS</span>
           <span className="format-badge">PDF</span>
+          <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-3)' }}>· Max 2 MB</span>
         </div>
       </div>
 

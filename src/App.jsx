@@ -29,6 +29,7 @@ export default function App() {
   const [error, setError] = useState(null)
   const [usage, setUsage] = useState(null)
   const [isDev, setIsDev] = useState(false)
+  const [reportReady, setReportReady] = useState(false)
 
   useEffect(() => {
     const check = () => setIsDev(window.location.hash === '#dev')
@@ -78,8 +79,13 @@ export default function App() {
           if (evt.type === 'done') {
             setAnalysis(evt.analysis)
             setUsage(evt.usage)
-            setStep('results')
-            attachCursorGlow()
+            setReportReady(true)
+            // Brief pause so the user sees all 5 green ticks + 100% before navigating
+            setTimeout(() => {
+              setStep('results')
+              setReportReady(false)
+              attachCursorGlow()
+            }, 900)
             return
           }
           if (evt.type === 'error') throw new Error(evt.error)
@@ -98,6 +104,7 @@ export default function App() {
     setAnalysis(null)
     setError(null)
     setUsage(null)
+    setReportReady(false)
   }
 
   if (isDev) {
@@ -180,7 +187,7 @@ export default function App() {
           />
         )}
 
-        {step === 'loading' && <LoadingState />}
+        {step === 'loading' && <LoadingState reportReady={reportReady} />}
 
         {step === 'error' && (
           <div className="error-state">

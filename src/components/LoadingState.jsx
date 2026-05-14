@@ -5,9 +5,11 @@ const STEPS = [
   { label: 'Detecting anomaly patterns', duration: 3000 },
   { label: 'Quantifying revenue impact', duration: 2500 },
   { label: 'Generating action plans', duration: 2000 },
+  { label: 'Financial Report Ready', duration: null }, // driven by reportReady prop
 ]
 
-const TOTAL_MS = STEPS.reduce((s, st) => s + st.duration, 0)
+const TIMED_STEPS = STEPS.filter(s => s.duration !== null)
+const TOTAL_MS = TIMED_STEPS.reduce((s, st) => s + st.duration, 0)
 
 const TIPS = [
   'Avoid buying luxury items if you cannot show them off or tell anyone about them.',
@@ -31,16 +33,17 @@ function shuffle(arr) {
   return a
 }
 
-export default function LoadingState() {
+export default function LoadingState({ reportReady = false }) {
   const [activeStep, setActiveStep] = useState(0)
   const [pct, setPct] = useState(0)
   const [tipIdx, setTipIdx] = useState(0)
   const [tipKey, setTipKey] = useState(0)
   const shuffledTips = useRef(shuffle(TIPS))
 
+  // Advance the first 4 timed steps
   useEffect(() => {
     let elapsed = 0
-    const timers = STEPS.map((step, i) => {
+    const timers = TIMED_STEPS.map((step, i) => {
       const t = setTimeout(() => setActiveStep(i + 1), elapsed + step.duration)
       elapsed += step.duration
       return t
@@ -48,8 +51,17 @@ export default function LoadingState() {
     return () => timers.forEach(clearTimeout)
   }, [])
 
-  // Progress ring animates to 96% over TOTAL_MS, then pulses — never blocks navigation
+  // When report is ready, mark all steps done (including step 5) and fill ring to 100%
   useEffect(() => {
+    if (reportReady) {
+      setActiveStep(STEPS.length) // all green
+      setPct(100)
+    }
+  }, [reportReady])
+
+  // Progress ring: animate to 96% over TOTAL_MS while waiting, snap to 100% on ready
+  useEffect(() => {
+    if (reportReady) return
     const start = Date.now()
     let rafId
     const frame = () => {
@@ -60,7 +72,7 @@ export default function LoadingState() {
     }
     rafId = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(rafId)
-  }, [])
+  }, [reportReady])
 
   // Tips cycle independently — navigation is never gated on this
   useEffect(() => {
@@ -90,12 +102,12 @@ export default function LoadingState() {
             cx="65" cy="65" r="54"
             strokeDasharray={circumference}
             strokeDashoffset={dashOffset}
-            style={{ transition: 'stroke-dashoffset 0.3s ease' }}
+            style={{ transition: 'stroke-dashoffset 0.8s ease' }}
           />
         </svg>
         <div className="liquid-ring-inner">
           <div className="liquid-ring-pct">{pct}%</div>
-          <div className="liquid-ring-label">Analysing</div>
+          <div className="liquid-ring-label">{reportReady ? 'Ready!' : 'Analysing'}</div>
         </div>
       </div>
 
@@ -103,14 +115,18 @@ export default function LoadingState() {
       <p>AI is analysing your transaction patterns…</p>
 
       <div className="loading-steps">
-        {STEPS.map((step, i) => (
-          <div className={`loading-step${i === activeStep ? ' active' : ''}`} key={i}>
-            <div className={`step-icon${i < activeStep ? ' done' : i === activeStep ? ' active' : ''}`}>
-              {i < activeStep ? '✓' : i + 1}
+        {STEPS.map((step, i) => {
+          const isDone   = i < activeStep
+          const isActive = i === activeStep && i < STEPS.length - 1
+          return (
+            <div className={`loading-step${isActive ? ' active' : ''}${isDone ? ' done-step' : ''}`} key={i}>
+              <div className={`step-icon${isDone ? ' done' : isActive ? ' active' : ''}`}>
+                {isDone ? '✓' : i + 1}
+              </div>
+              <span>{step.label}</span>
             </div>
-            <span>{step.label}</span>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className="tip-card">
