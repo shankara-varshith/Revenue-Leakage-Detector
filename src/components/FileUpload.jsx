@@ -19,6 +19,7 @@ export default function FileUpload({ onFileLoaded }) {
   const [parsing, setParsing] = useState(false)
   const [parseError, setParseError] = useState(null)
   const [ripples, setRipples] = useState([])
+  const [pdfProgress, setPdfProgress] = useState(null)
   const glow = useCursorGlow()
 
   async function handleFile(file) {
@@ -29,13 +30,15 @@ export default function FileUpload({ onFileLoaded }) {
     }
     setParsing(true)
     setParseError(null)
+    setPdfProgress(null)
     try {
-      const data = await parseFile(file)
+      const data = await parseFile(file, (p) => setPdfProgress(p))
       onFileLoaded(data, file.name)
     } catch (e) {
       setParseError(e.message)
     } finally {
       setParsing(false)
+      setPdfProgress(null)
     }
   }
 
@@ -87,8 +90,22 @@ export default function FileUpload({ onFileLoaded }) {
           <span className="upload-icon">{parsing ? '⏳' : '📂'}</span>
         </div>
 
-        <h3>{parsing ? 'Parsing your file…' : 'Drop your statement here'}</h3>
-        <p>{parsing ? 'Please wait' : 'Drag & drop or click to browse'}</p>
+        <h3>
+          {pdfProgress
+            ? pdfProgress.current === 0
+              ? 'Loading PDF reader…'
+              : `Reading page ${pdfProgress.current} of ${pdfProgress.total}`
+            : parsing
+              ? 'Parsing your file…'
+              : 'Drop your statement here'}
+        </h3>
+        <p>
+          {pdfProgress
+            ? `Extracting transactions · ${Math.round((pdfProgress.current / pdfProgress.total) * 100)}%`
+            : parsing
+              ? 'Please wait'
+              : 'Drag & drop or click to browse'}
+        </p>
 
         {!parsing && <button className="upload-btn" type="button">Choose File</button>}
 
