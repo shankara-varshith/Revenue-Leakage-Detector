@@ -53,7 +53,7 @@ export default async function handler(req, res) {
   res.flushHeaders()
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  const sample = transactionData.slice(0, 300)
+  const sample = transactionData.slice(0, 150)
   const columns = Object.keys(sample[0] || {})
   const currency     = userProfile?.currency     ?? '$'
   const currencyCode = userProfile?.currencyCode ?? 'USD'
@@ -73,8 +73,8 @@ ${JSON.stringify(sample, null, 2)}`
 
   try {
     const stream = client.messages.stream({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
       system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: userMessage }],
     })
