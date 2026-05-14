@@ -19,7 +19,6 @@ export default function FileUpload({ onFileLoaded }) {
   const [parsing, setParsing] = useState(false)
   const [parseError, setParseError] = useState(null)
   const [ripples, setRipples] = useState([])
-  const [pdfProgress, setPdfProgress] = useState(null)
   const glow = useCursorGlow()
 
   async function handleFile(file) {
@@ -30,15 +29,13 @@ export default function FileUpload({ onFileLoaded }) {
     }
     setParsing(true)
     setParseError(null)
-    setPdfProgress(null)
     try {
-      const data = await parseFile(file, (p) => setPdfProgress(p))
+      const data = await parseFile(file)
       onFileLoaded(data, file.name)
     } catch (e) {
       setParseError(e.message)
     } finally {
       setParsing(false)
-      setPdfProgress(null)
     }
   }
 
@@ -90,22 +87,8 @@ export default function FileUpload({ onFileLoaded }) {
           <span className="upload-icon">{parsing ? '⏳' : '📂'}</span>
         </div>
 
-        <h3>
-          {pdfProgress
-            ? pdfProgress.current === 0
-              ? 'Loading PDF reader…'
-              : `Reading page ${pdfProgress.current} of ${pdfProgress.total}`
-            : parsing
-              ? 'Parsing your file…'
-              : 'Drop your statement here'}
-        </h3>
-        <p>
-          {pdfProgress
-            ? `Extracting transactions · ${Math.round((pdfProgress.current / pdfProgress.total) * 100)}%`
-            : parsing
-              ? 'Please wait'
-              : 'Drag & drop or click to browse'}
-        </p>
+        <h3>{parsing ? 'Parsing your file…' : 'Drop your statement here'}</h3>
+        <p>{parsing ? 'Please wait' : 'Drag & drop or click to browse'}</p>
 
         {!parsing && <button className="upload-btn" type="button">Choose File</button>}
 
@@ -113,7 +96,6 @@ export default function FileUpload({ onFileLoaded }) {
           <span className="format-badge">CSV</span>
           <span className="format-badge">XLSX</span>
           <span className="format-badge">XLS</span>
-          <span className="format-badge">PDF</span>
           <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-3)' }}>· Max 2 MB</span>
         </div>
       </div>
@@ -135,7 +117,7 @@ export default function FileUpload({ onFileLoaded }) {
       <input
         ref={inputRef}
         type="file"
-        accept=".csv,.xlsx,.xls,.pdf"
+        accept=".csv,.xlsx,.xls"
         style={{ display: 'none' }}
         onChange={onInputChange}
       />
