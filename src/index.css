@@ -1,0 +1,50 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #070710;
+  --surface: #0f0f1a;
+  --surface-2: #161625;
+  --surface-3: #1e1e32;
+  --border: rgba(139, 92, 246, 0.2);
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-glow: rgba(139, 92, 246, 0.5);
+
+  --primary: #8b5cf6;
+  --primary-dark: #6d28d9;
+  --primary-bright: #a78bfa;
+  --primary-glow: rgba(139, 92, 246, 0.3);
+  --primary-light: rgba(139, 92, 246, 0.12);
+
+  --success: #10b981;
+  --success-light: rgba(16, 185, 129, 0.12);
+  --warning: #f59e0b;
+  --warning-light: rgba(245, 158, 11, 0.12);
+  --danger: #f43f5e;
+  --danger-light: rgba(244, 63, 94, 0.12);
+  --neon-green: #00ff88;
+
+  --text: #f1f5f9;
+  --text-2: #94a3b8;
+  --text-3: #475569;
+  --text-mono: 'Space Mono', 'SF Mono', 'Fira Code', monospace;
+
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 4px 32px rgba(0,0,0,0.6);
+  --shadow-glow: 0 0 60px rgba(139, 92, 246, 0.15);
+  --shadow-glow-lg: 0 0 120px rgba(139, 92, 246, 0.2);
+}
+
+body {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
