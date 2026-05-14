@@ -781,3 +781,104 @@ td { padding: 8px 12px; border-bottom: 1px solid var(--border-subtle); color: va
   .upload-card { padding: 32px 16px; }
   .summary-card .value { font-size: 20px; }
 }
+
+/* ═══════════════════════════════════════════
+   TYPOGRAPHY SCALE — readability bump
+   (overrides earlier declarations via cascade)
+═══════════════════════════════════════════ */
+
+/* Hero */
+.hero-title        { font-size: 62px; }
+.hero-title .mono  { font-size: 58px; }
+.hero-sub          { font-size: 18px; }
+.hero-eyebrow      { font-size: 12px; }
+.feature-pill      { font-size: 13px; }
+
+/* Header */
+.logo h1           { font-size: 16px; }
+.logo p            { font-size: 12px; }
+.header-badge      { font-size: 12px; }
+
+/* Upload card */
+.upload-card h3    { font-size: 24px; }
+.upload-card p     { font-size: 16px; }
+.upload-btn        { font-size: 15px; }
+.upload-btn-sample { font-size: 15px; }
+.security-text     { font-size: 12px; }
+
+/* Buttons */
+.btn-primary                { font-size: 15px; }
+.btn-primary.btn-large      { font-size: 16px; }
+.btn-secondary              { font-size: 14px; }
+
+/* User input form */
+.inputs-screen .section-title { font-size: 30px; }
+.inputs-screen .section-sub   { font-size: 15px; }
+.input-card label             { font-size: 12px; }
+.toggle-btn                   { font-size: 14px; }
+.select-input, .text-input    { font-size: 15px; }
+.file-chip                    { font-size: 14px; }
+.file-chip-name               { font-size: 13px; }
+
+/* Loading */
+.loading-state h3  { font-size: 24px; }
+.loading-state > p { font-size: 15px; }
+.loading-step      { font-size: 14px; }
+.liquid-ring-pct   { font-size: 24px; }
+.tip-label         { font-size: 11px; }
+.tip-text          { font-size: 14px; }
+
+/* Results — summary strip */
+.summary-card .label { font-size: 12px; }
+.summary-card .value { font-size: 30px; }
+.summary-card .sub   { font-size: 13px; }
+
+/* Results — header */
+.results-title h2  { font-size: 28px; }
+.results-title p   { font-size: 14px; }
+
+/* Results — pattern cards */
+.pattern-name            { font-size: 16px; }
+.pattern-description     { font-size: 14px; }
+.evidence-block          { font-size: 13px; }
+.fix-text                { font-size: 13px; }
+.step-item               { font-size: 13px; }
+.timeline-row            { font-size: 12px; }
+.amount-block .amt-label { font-size: 11px; }
+.amount-block .amt-value { font-size: 18px; }
+.badge                   { font-size: 11px; }
+.patterns-section h3     { font-size: 12px; }
+
+/* Quick wins */
+.quick-wins h3 { font-size: 12px; }
+.win-item      { font-size: 13px; }
+
+/* Bento preview */
+.bento-label       { font-size: 11px; }
+.bento-value       { font-size: 28px; }
+.bento-sub         { font-size: 12px; }
+.bento-pattern-name { font-size: 13px; }
+.bento-pattern-val  { font-size: 16px; }
+.bento-pattern-row  { font-size: 12px; }
+
+/* Dev login */
+.dev-login-title { font-size: 24px; }
+.dev-login-sub   { font-size: 14px; }
+
+/* Mobile bumps */
+@media (max-width: 768px) {
+  .hero-title              { font-size: 40px; }
+  .hero-title .mono        { font-size: 38px; }
+  .hero-sub                { font-size: 16px; }
+  .summary-card .value     { font-size: 26px; }
+  .pattern-description     { font-size: 14px; }
+  .loading-state h3        { font-size: 22px; }
+  .results-title h2        { font-size: 22px; }
+}
+
+@media (max-width: 420px) {
+  .hero-title              { font-size: 32px; }
+  .hero-title .mono        { font-size: 30px; }
+  .hero-sub                { font-size: 15px; }
+  .summary-card .value     { font-size: 22px; }
+}
