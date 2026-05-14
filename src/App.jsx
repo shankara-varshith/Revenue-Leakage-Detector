@@ -87,14 +87,14 @@ export default function App() {
   const [analysis, setAnalysis]       = useState(null)
   const [error, setError]             = useState(null)
   const [usage, setUsage]             = useState(null)
-  const [isDev, setIsDev]             = useState(() => window.location.hash === '#dev')
+  const [isDev, setIsDev]             = useState(() => window.location.hash.toLowerCase() === '#dev')
   const [devAuthd, setDevAuthd]       = useState(false)
   const [reportReady, setReportReady] = useState(false)
   const [isSample, setIsSample]       = useState(false)
 
   useEffect(() => {
     const check = () => {
-      const next = window.location.hash === '#dev'
+      const next = window.location.hash.toLowerCase() === '#dev'
       setIsDev(next)
       if (!next) setDevAuthd(false)
     }
