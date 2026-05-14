@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const API = 'http://localhost:3001'
+const API = ''
 
 function fmtNum(n) { return Number(n || 0).toLocaleString() }
 function fmtMoney(n) { return '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }

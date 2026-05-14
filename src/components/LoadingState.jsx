@@ -59,16 +59,27 @@ export default function LoadingState({ reportReady = false }) {
     }
   }, [reportReady])
 
-  // Progress ring: animate to 96% over TOTAL_MS while waiting, snap to 100% on ready
+  // Progress ring: fill to 96% over TOTAL_MS, then oscillate 93–99% so it never looks frozen
   useEffect(() => {
     if (reportReady) return
     const start = Date.now()
     let rafId
-    const frame = () => {
+    let oscillateStart = null
+
+    const frame = (now) => {
       const elapsed = Date.now() - start
-      const p = Math.min((elapsed / TOTAL_MS) * 100, 96)
-      setPct(Math.round(p))
-      if (p < 96) { rafId = requestAnimationFrame(frame) }
+      if (elapsed < TOTAL_MS) {
+        const p = (elapsed / TOTAL_MS) * 96
+        setPct(Math.round(p))
+        rafId = requestAnimationFrame(frame)
+      } else {
+        if (!oscillateStart) oscillateStart = now
+        const t = (now - oscillateStart) / 1000
+        // Sine wave between 93% and 99%
+        const p = 96 + Math.sin(t * 1.2) * 3
+        setPct(Math.round(p))
+        rafId = requestAnimationFrame(frame)
+      }
     }
     rafId = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(rafId)
