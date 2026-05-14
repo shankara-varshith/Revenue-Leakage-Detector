@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { getSessions } from './mongo.js'
+import { getBankStatements, getOutputReports } from './mongo.js'
 
 const SYSTEM_PROMPT = `You are an expert financial analyst detecting revenue leakage from transaction data. Identify the top 3 most impactful leakage patterns with precise, actionable fixes.
 
@@ -122,16 +122,33 @@ ${csvRows}`
     }
     if (!analysis) throw new Error('AI returned invalid JSON — please try again')
 
-    // Persist to MongoDB
+    // Persist to MongoDB — BankStatement + OutputReports as separate collections
     let sessionId = null
     try {
-      const col = await getSessions()
+      const now          = new Date()
       const patterns     = analysis.leakage_patterns?.map(p => p.pattern_name) ?? []
       const totalLeakage = analysis.leakage_patterns?.reduce((s, p) => s + (Number(p.estimated_annual_loss)      || 0), 0) ?? 0
       const recoveryPot  = analysis.leakage_patterns?.reduce((s, p) => s + (Number(p.estimated_recovery_amount) || 0), 0) ?? 0
 
-      const doc = {
-        timestamp:         new Date(),
+      // 1. Store raw statement in BankStatement collection
+      const stmtCol    = await getBankStatements()
+      const stmtResult = await stmtCol.insertOne({
+        timestamp:   now,
+        email:       userProfile?.email   ?? 'unknown',
+        profileType: userProfile?.type    ?? 'unknown',
+        country:     userProfile?.country ?? 'unknown',
+        currency,
+        currencyCode,
+        fileName,
+        rowCount:    transactionData.length,
+        columns,
+        data:        transactionData,
+      })
+
+      // 2. Store analysis output in OutputReports collection
+      const reportCol    = await getOutputReports()
+      const reportResult = await reportCol.insertOne({
+        timestamp:         now,
         email:             userProfile?.email   ?? 'unknown',
         profileType:       userProfile?.type    ?? 'unknown',
         country:           userProfile?.country ?? 'unknown',
@@ -139,7 +156,7 @@ ${csvRows}`
         currencyCode,
         fileName,
         rowCount:          transactionData.length,
-        columns,
+        statementId:       stmtResult.insertedId,   // cross-reference
         tokensIn:          usage.input_tokens,
         tokensOut:         usage.output_tokens,
         tokensCached:      0,
@@ -148,12 +165,10 @@ ${csvRows}`
         confidence:        analysis.confidence_score ?? 0,
         patterns,
         quickWins:         analysis.quick_wins ?? [],
-        statementData:     transactionData,
-        reportData:        analysis,
-      }
+        report:            analysis,
+      })
 
-      const insertResult = await col.insertOne(doc)
-      sessionId = insertResult.insertedId.toString()
+      sessionId = reportResult.insertedId.toString()
     } catch (dbErr) {
       console.warn('MongoDB log failed:', dbErr.message)
     }

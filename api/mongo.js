@@ -15,7 +15,17 @@ export async function getDb() {
   return db
 }
 
-export async function getSessions() {
+export async function getBankStatements() {
   const d = await getDb()
-  return d.collection('sessions')
+  return d.collection('BankStatement')
+}
+
+export async function getOutputReports() {
+  const d = await getDb()
+  return d.collection('OutputReports')
+}
+
+// Legacy alias — kept so dashboard-stats still compiles during migration
+export async function getSessions() {
+  return getOutputReports()
 }

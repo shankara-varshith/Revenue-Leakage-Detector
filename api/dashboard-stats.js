@@ -1,15 +1,12 @@
-import { getSessions } from './mongo.js'
+import { getOutputReports } from './mongo.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    const col = await getSessions()
+    const col = await getOutputReports()
     const sessions = await col.find({}, {
-      projection: {
-        statementData: 0,   // exclude heavy payloads from list
-        reportData: 0,
-      }
+      projection: { report: 0 },   // exclude heavy report payload from list
     }).sort({ timestamp: -1 }).toArray()
 
     const total = sessions.length
