@@ -53,11 +53,20 @@ export default async function handler(req, res) {
   res.flushHeaders()
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  const sample = transactionData.slice(0, 150)
+  const sample = transactionData.slice(0, 100)
   const columns = Object.keys(sample[0] || {})
   const currency     = userProfile?.currency     ?? '$'
   const currencyCode = userProfile?.currencyCode ?? 'USD'
   const profileLabel = userProfile?.type === 'individual' ? 'Individual (personal finance)' : 'Business / Merchant'
+
+  // CSV is ~70% fewer tokens than pretty-printed JSON for the same data
+  const csvRows = [
+    columns.join(','),
+    ...sample.map(row => columns.map(c => {
+      const v = String(row[c] ?? '').replace(/"/g, '""')
+      return v.includes(',') || v.includes('\n') ? `"${v}"` : v
+    }).join(','))
+  ].join('\n')
 
   const userMessage = `Analyse this transaction dataset for revenue leakage.
 
@@ -65,16 +74,15 @@ Profile: ${profileLabel}
 Location: ${userProfile?.country ?? 'Unknown'}
 Currency: ${currency} (${currencyCode}) — use ONLY this currency for all money values
 File: ${fileName}
-Total rows: ${transactionData.length}
-Columns: ${columns.join(', ')}
+Total rows: ${transactionData.length} (sample: ${sample.length})
 
-Data (${sample.length} rows):
-${JSON.stringify(sample, null, 2)}`
+Data (CSV):
+${csvRows}`
 
   try {
     const stream = client.messages.stream({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
+      max_tokens: 1500,
       system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: userMessage }],
     })
