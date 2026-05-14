@@ -59,27 +59,24 @@ export default function LoadingState({ reportReady = false }) {
     }
   }, [reportReady])
 
-  // Progress ring: fill to 96% over TOTAL_MS, then oscillate 93–99% so it never looks frozen
+  // Progress ring: fill to 96% over TOTAL_MS, then crawl slowly toward 99% — never reverses
   useEffect(() => {
     if (reportReady) return
     const start = Date.now()
     let rafId
-    let oscillateStart = null
 
-    const frame = (now) => {
+    const frame = () => {
       const elapsed = Date.now() - start
+      let p
       if (elapsed < TOTAL_MS) {
-        const p = (elapsed / TOTAL_MS) * 96
-        setPct(Math.round(p))
-        rafId = requestAnimationFrame(frame)
+        p = (elapsed / TOTAL_MS) * 96
       } else {
-        if (!oscillateStart) oscillateStart = now
-        const t = (now - oscillateStart) / 1000
-        // Sine wave between 93% and 99%
-        const p = 96 + Math.sin(t * 1.2) * 3
-        setPct(Math.round(p))
-        rafId = requestAnimationFrame(frame)
+        // Asymptotic crawl: approaches 99% but never reaches it
+        const extra = (elapsed - TOTAL_MS) / 1000
+        p = 99 - 3 * Math.exp(-extra / 20)
       }
+      setPct(Math.round(p))
+      rafId = requestAnimationFrame(frame)
     }
     rafId = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(rafId)
